@@ -2,7 +2,7 @@ const { Restaurant, Category, Comment, User } = require('../models')
 const { getOffset, getPagination } = require('../helpers/pagination-helper')
 
 const restaurantController = {
-  getRestaurants: (req, res) => {
+  getRestaurants: (req, res, next) => {
     const DEFAULT_LIMIT = 9 // 代表想要一頁有 9 筆餐廳資料
     const categoryId = Number(req.query.categoryId) || '' // 從網址上拿下來的參數是字串
     const page = Number(req.query.page) || 1 // 如果 query string 沒有攜帶特定數字的話page預設為 1
@@ -40,6 +40,7 @@ const restaurantController = {
           pagination: getPagination(limit, page, restaurants.count)
         })
       })
+      .catch(err => next(err))
   },
   getRestaurant: async (req, res, next) => {
     try {
@@ -50,7 +51,6 @@ const restaurantController = {
           { model: User, as: 'FavoritedUsers' },
           { model: User, as: 'LikedUsers' }
         ]
-        // nest: true // TODO: 這行的意義再研究
       })
       if (!restaurant) throw new Error("Restaurant didn't exist!")
       await restaurant.increment('view_counts')
@@ -66,15 +66,25 @@ const restaurantController = {
     }
   },
   getDashboard: async (req, res, next) => {
-    const restaurant = await Restaurant.findByPk(req.params.id, {
-      include: Category,
-      nest: true,
-      raw: true
-    })
-    if (!restaurant) throw new Error("Restaurant didn't exist!")
-    res.render('dashboard', {
-      restaurant
-    })
+    try {
+      const restaurant = await Restaurant.findByPk(req.params.id, {
+        include: [Category,
+          { model: User, as: 'FavoritedUsers' },
+          { model: Comment, include: User }
+        ]
+      })
+      if (!restaurant) throw new Error("Restaurant didn't exist!")
+      const favoritedCount = restaurant.toJSON().FavoritedUsers.length
+      const commentsCount = restaurant.toJSON().Comments.length
+      // console.log('commentsCount', commentsCount)
+      return res.render('dashboard', {
+        restaurant: restaurant.toJSON(),
+        favoritedCount,
+        commentsCount
+      })
+    } catch (err) {
+      next(err)
+    }
   },
   getFeeds: (req, res, next) => {
     return Promise.all([

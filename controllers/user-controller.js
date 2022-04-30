@@ -36,17 +36,49 @@ const userController = {
     req.logout()
     res.redirect('/signin')
   },
-  getUser: (req, res) => {
-    return User.findByPk(req.params.id, {
-      include: [
-        { model: Comment, include: Restaurant }
-      ]
-    }).then(user => {
+  getUser: async (req, res, next) => {
+    try {
+      const userId = req.params.id
+      const user = await User.findByPk(userId, {
+        include: [
+          { model: Comment, include: Restaurant },
+          { model: Restaurant, as: 'FavoritedRestaurants' }
+        ]
+      })
       if (!user) throw new Error("user didn't exist!")
+
+      // 不重複評論餐廳數
       const restaurantList = user.Comments && user.Comments.map(comment => {
         return ({ name: comment.Restaurant.name, id: comment.Restaurant.id })
       })
       const restaurantListSet = restaurantList && [...new Set(restaurantList.map(item => JSON.stringify(item)))].map(item => JSON.parse(item))
+
+      // 收藏的餐廳
+      const favoritedRestaurants = user.FavoritedRestaurants.map(restaurant => ({ id: restaurant.id, name: restaurant.name }))
+      const favoritedRestaurantsCount = favoritedRestaurants.length
+      // console.log('favoritedRestaurantsCount', favoritedRestaurantsCount)
+
+      const followShip = {}
+
+      // 所有這個user追蹤的對象
+      const { count, rows } = await Followship.findAndCountAll({ where: { followerId: userId } })
+      followShip.followingCount = count // 拿到追蹤對象的數量
+      followShip.followingId = rows.map(row => row.followingId) // 拿到追蹤對象的userId
+      // 用id 回查follower name 包成一包
+      followShip.followingName = await Promise.all(followShip.followingId.map(async id => {
+        const user = await User.findByPk(id, { attributes: ['name'] }, { raw: true })
+        return { ...id, id: id, name: user.toJSON().name }
+      }))
+
+      // 所有這個user的粉絲
+      const result = await Followship.findAndCountAll({ where: { followingId: userId } })
+      followShip.followerCount = result.count
+      followShip.followerId = result.rows.map(row => row.followerId)
+      followShip.followerName = await Promise.all(followShip.followerId.map(async id => {
+        const user = await User.findByPk(id, { attributes: ['name'] }, { raw: true })
+        return { ...id, id: id, name: user.toJSON().name }
+      }))
+
       // console.log('req.user.id', Number(req.user.id)) 即便找的到id，測試的時候仍會顯示 Cannot read property 'id' of undefined
       const id = Number(getUser(req).id)
       const email = getUser(req).email
@@ -56,9 +88,14 @@ const userController = {
         id,
         email,
         restaurantCount,
-        restaurantListSet
+        restaurantListSet,
+        followShip,
+        favoritedRestaurants,
+        favoritedRestaurantsCount
       })
-    })
+    } catch (err) {
+      next(err)
+    }
   },
   editUser: (req, res, next) => {
     return User.findByPk(req.params.id, { raw: true })
