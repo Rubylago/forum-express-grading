@@ -42,7 +42,9 @@ const userController = {
       const user = await User.findByPk(userId, {
         include: [
           { model: Comment, include: Restaurant },
-          { model: Restaurant, as: 'FavoritedRestaurants' }
+          { model: Restaurant, as: 'FavoritedRestaurants' },
+          { model: User, as: 'Followings' },
+          { model: User, as: 'Followers' }
         ]
       })
       if (!user) throw new Error("user didn't exist!")
@@ -55,29 +57,6 @@ const userController = {
 
       // 收藏的餐廳
       const favoritedRestaurants = user.FavoritedRestaurants.map(restaurant => ({ id: restaurant.id, name: restaurant.name }))
-      const favoritedRestaurantsCount = favoritedRestaurants.length
-      // console.log('favoritedRestaurantsCount', favoritedRestaurantsCount)
-
-      const followShip = {}
-
-      // 所有這個user追蹤的對象
-      const { count, rows } = await Followship.findAndCountAll({ where: { followerId: userId } })
-      followShip.followingCount = count // 拿到追蹤對象的數量
-      followShip.followingId = rows.map(row => row.followingId) // 拿到追蹤對象的userId
-      // 用id 回查follower name 包成一包
-      followShip.followingName = await Promise.all(followShip.followingId.map(async id => {
-        const user = await User.findByPk(id, { attributes: ['name'] }, { raw: true })
-        return { ...id, id: id, name: user.toJSON().name }
-      }))
-
-      // 所有這個user的粉絲
-      const result = await Followship.findAndCountAll({ where: { followingId: userId } })
-      followShip.followerCount = result.count
-      followShip.followerId = result.rows.map(row => row.followerId)
-      followShip.followerName = await Promise.all(followShip.followerId.map(async id => {
-        const user = await User.findByPk(id, { attributes: ['name'] }, { raw: true })
-        return { ...id, id: id, name: user.toJSON().name }
-      }))
 
       // console.log('req.user.id', Number(req.user.id)) 即便找的到id，測試的時候仍會顯示 Cannot read property 'id' of undefined
       const id = Number(getUser(req).id)
@@ -87,11 +66,9 @@ const userController = {
         user: user.toJSON(),
         id,
         email,
-        restaurantCount,
         restaurantListSet,
-        followShip,
-        favoritedRestaurants,
-        favoritedRestaurantsCount
+        restaurantCount,
+        favoritedRestaurants
       })
     } catch (err) {
       next(err)
