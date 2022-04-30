@@ -10,7 +10,7 @@
         <li><strong>已評論餐廳數:</strong> {{ restaurantCount }}  </li>
         <li><strong>收藏的餐廳數:</strong> {{ favoritedRestaurantsCount }} </li>
         <li><strong>追蹤人數(followings):</strong> {{ followShip.followingCount }} </li>
-        <li><strong>粉絲數(followers):</strong>  </li>
+        <li><strong>粉絲數(followers):</strong> {{followShip.followerCount}}  </li>
       </ul>
       {{#ifCond user.id id }}
         <a class="btn btn-primary" href="/users/{{user.id}}/edit">edit</a>
