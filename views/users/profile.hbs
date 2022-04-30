@@ -5,23 +5,74 @@
   <div class="col-md-4">
     <div class="well">
       <ul class="list-unstyled">
-        <li><strong>name</strong> {{user.name}}</li>
-        <li><strong>email</strong> {{user.email}}
+        <li><strong>name:</strong> {{user.name}}</li>
+        <li><strong>email:</strong> {{user.email}}</li>
+        <li><strong>已評論餐廳數:</strong> {{ restaurantCount }}  </li>
+        <li><strong>收藏的餐廳數:</strong> {{ favoritedRestaurantsCount }} </li>
+        <li><strong>追蹤人數(followings):</strong> {{ followShip.followingCount }} </li>
+        <li><strong>粉絲數(followers):</strong>  </li>
+      </ul>
+      {{#ifCond user.id id }}
+        <a class="btn btn-primary" href="/users/{{user.id}}/edit">edit</a>
+      {{/ifCond}}
     </div>
   </div>
-  {{#ifCond user.id id }}
-    <div class="col-md-4">
-      <a class="btn btn-primary" href="/users/{{user.id}}/edit">edit</a>
-    </div>
-  {{/ifCond}}
   <hr>
-  {{!-- Comment --}}
-  <h3 class="mb-3">{{ restaurantCount }}已評論餐廳</h3>
-  {{#each restaurantListSet}}
-    <blockquote class="blockquote mb-0">
-      <h4><a href="/restaurants/{{this.id}}">{{this.name}}</a></h4>
-    </blockquote>
-    <hr />
-  {{/each}}
+
+
 </div>
+
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">粉絲(followers)</h5>
+        {{#each followShip.followerName}}
+          <a href="/users/{{ this.id }}"><p class="card-text">{{ this.name }}</p></a>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">正在追蹤(followings)</h5>
+        {{#each followShip.followingName}}
+        <a href="/users/{{ this.id }}"><p class="card-text">{{ this.name }}</p></a>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">收藏的餐廳</h5>
+        {{#each favoritedRestaurants}}
+          <a href="/restaurants/{{ this.id }}"><p class="card-text">{{ this.name }}</p></a>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+    {{!-- Comment --}}
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">{{ restaurantCount }}已評論餐廳</h5>
+        <p class="card-text">
+          {{#each restaurantListSet}}
+            <blockquote class="blockquote mb-0">
+              <span><a href="/restaurants/{{this.id}}">{{this.name}}</a></span>
+            </blockquote>
+          {{/each}}
+        </p>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<p></p>
 <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
+
