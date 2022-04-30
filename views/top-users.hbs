@@ -19,9 +19,11 @@
             <button type="submit" class="btn btn-danger">取消追蹤</button>
           </form>
         {{else}}
+          {{#ifNotCond this.id ../loginUser.id }}
           <form action="/following/{{this.id}}" method="POST" style="display: contents;">
             <button type="submit" class="btn btn-primary">追蹤</button>
           </form>
+          {{/ifNotCond}}
         {{/if}}
       </p>
     </div>
